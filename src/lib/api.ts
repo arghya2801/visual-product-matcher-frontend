@@ -9,10 +9,8 @@ export type Product = {
   metadata?: Record<string, any> & { price?: number; brand?: string; description?: string };
 };
 
-export type SearchResult = {
-  id: string;
+export type SearchResult = Product & {
   score: number;
-  product: Product;
 };
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
@@ -45,14 +43,50 @@ export const api = {
     return http('/api/products/seed', { method: 'POST', body: JSON.stringify({ count }) });
   },
   uploadByFile: async (file: File): Promise<{ url: string; key: string; embedding: number[]; dims: number }> => {
-    const form = new FormData();
-    form.append('image', file);
-    const res = await fetch(`${BASE_URL}/api/upload`, { method: 'POST', body: form });
-    if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-    return res.json();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const imageData = reader.result as string;
+          const resp = await http('/api/upload', { 
+            method: 'POST', 
+            body: JSON.stringify({ 
+              imageData, 
+              filename: file.name,
+              mimetype: file.type 
+            }) 
+          });
+          resolve(resp);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
   },
   uploadByUrl: async (imageUrl: string): Promise<{ url: string; key: string; embedding: number[]; dims: number }> => {
     return http('/api/upload', { method: 'POST', body: JSON.stringify({ imageUrl }) });
+  },
+  bulkUpload: async (files: File[], category?: string): Promise<{ inserted: number; products: Product[] }> => {
+    // Convert files to base64
+    const imagePromises = files.map(file => {
+      return new Promise<{ imageData: string; filename: string; mimetype: string }>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ 
+          imageData: reader.result as string, 
+          filename: file.name,
+          mimetype: file.type 
+        });
+        reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+        reader.readAsDataURL(file);
+      });
+    });
+
+    const images = await Promise.all(imagePromises);
+    const body = { images, category };
+    
+    return http('/api/bulk-upload', { method: 'POST', body: JSON.stringify(body) });
   },
   searchByImageUrl: async (imageUrl: string, opts?: { topK?: number; minScore?: number }): Promise<{ queryEmbeddingDims: number; results: SearchResult[] }> => {
     return http('/api/search', { method: 'POST', body: JSON.stringify({ imageUrl, ...(opts || {}) }) });
