@@ -13,7 +13,7 @@ export type SearchResult = Product & {
   score: number;
 };
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`,
@@ -48,7 +48,7 @@ export const api = {
       reader.onload = async () => {
         try {
           const imageData = reader.result as string;
-          const resp = await http('/api/upload', { 
+          const resp = await http<{ url: string; key: string; embedding: number[]; dims: number }>('/api/upload', { 
             method: 'POST', 
             body: JSON.stringify({ 
               imageData, 
