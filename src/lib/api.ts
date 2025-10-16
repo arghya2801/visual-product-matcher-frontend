@@ -13,7 +13,8 @@ export type SearchResult = Product & {
   score: number;
 };
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+// Use empty string for relative paths since API routes are in the same Next.js app
+const BASE_URL = "";
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`,
@@ -34,13 +35,9 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  health: async (): Promise<{ ok: true }> => http('/health'),
   products: async (category?: string): Promise<Product[]> => {
     const qs = category ? `?category=${encodeURIComponent(category)}` : '';
     return http(`/api/products${qs}`);
-  },
-  seedProducts: async (count = 50): Promise<{ inserted: number }> => {
-    return http('/api/products/seed', { method: 'POST', body: JSON.stringify({ count }) });
   },
   uploadByFile: async (file: File): Promise<{ url: string; key: string; embedding: number[]; dims: number }> => {
     return new Promise((resolve, reject) => {

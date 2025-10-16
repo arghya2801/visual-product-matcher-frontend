@@ -5,8 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { api, type Product, type SearchResult } from "@/lib/api";
 
 export default function Home() {
-  const backendUrl = useMemo(() => process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000", []);
-  const [health, setHealth] = useState<string>("unknown");
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -18,7 +16,6 @@ export default function Home() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   useEffect(() => {
-    api.health().then(() => setHealth("ok")).catch(() => setHealth("fail"));
     onLoadProducts();
   }, []);
 
@@ -113,8 +110,8 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-2 text-sm text-slate-300 bg-gray-900 px-3 py-1.5 rounded-full shadow-sm border border-gray-800">
-                <div className={`w-2 h-2 rounded-full ${health === 'ok' ? 'bg-cyan-500 animate-pulse' : 'bg-red-500'}`}></div>
-                <span className="font-mono text-xs text-slate-400">{health === 'ok' ? 'Online' : 'Offline'}</span>
+                <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
+                <span className="font-mono text-xs text-slate-400">Online</span>
               </div>
             </div>
           </div>
